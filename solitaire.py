@@ -19,7 +19,7 @@ deck_stack = None
 stacks = None
 screen = None
 
-logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.ERROR)
 
 def init_deck():
   global card_values
@@ -158,7 +158,8 @@ def deck_invisible(deck):
         card['sub_win'].refresh()
         card['sub_win'].erase()
         card['sub_win']=None
-      card['visible'] = False
+      card['visible']=False
+      card['highlight']=False
     except Exception as e:
       logging.error('Error making card invisible.')
       logging.error(e)
@@ -335,6 +336,13 @@ def check_move(stacks):
         logging.debug('Valid Move to Complete')
         move_to_stack(stacks,sel_card['suit'],deck_pos)
         logging.debug(stacks)
+        logging.debug(sel_stack)
+        logging.debug('Is that deck?')
+        if sel_stack == 'deck':
+          logging.debug('Moved from deck.')
+          if not is_deck_vis(stacks['deck']):
+            logging.debug('Deck no visible cards.')
+            draw_under_turn(stacks['deck'])
         reset()
         return True
     except Exception as e:
@@ -347,6 +355,9 @@ def check_move(stacks):
       logging.debug(sel_card)
       move_to_stack(stacks,cur_stack,deck_pos)
       logging.debug(stacks)
+      if not is_deck_vis(stacks['deck']):
+        logging.debug('Deck no visible cards.')
+        draw_under_turn(stacks['deck'])       
       reset()
       return True
   elif cur_stack != "deck":
@@ -360,6 +371,14 @@ def check_move(stacks):
       if sel_card['value'] == card_values[(card_values.index(check_card['value']) -1)]:
         logging.debug('Valid Move to stack')
         move_to_stack(stacks,cur_stack,deck_pos)
+        logging.debug(stacks)
+        logging.debug(sel_stack)
+        logging.debug('Is that deck?')
+        if sel_stack == 'deck':
+          logging.debug('Moved from deck.')
+          if not is_deck_vis(stacks['deck']):
+            logging.debug('Deck no visible cards.')
+            draw_under_turn(stacks['deck'])
         reset()
         return True
   return False
@@ -376,6 +395,27 @@ def reset():
   sel_pos=0
   cur_pos=0
   cur_stack="deck"
+
+def draw_under_turn(deck):
+  logging.debug('Drawing under card.')
+  logging.debug(deck)
+  y=6
+  x=3+card_width+2
+  if len(deck) > 0 and deck_status > 0:
+    logging.debug("Showing under turn.")
+    card=deck[deck_status-2]
+    logging.debug(card)
+    card_disp = screen.subwin(card_height,card_width,y,x)
+    card['sub_win'] = card_disp
+    card['visible'] = True
+    render_card(card)
+
+def is_deck_vis(deck):
+  logging.debug(deck)
+  for card in deck:
+    if card['visible'] == True:
+      return True
+  return False
 
 
 def move_to_stack(stacks,dest_stack,deck_pos=None):
