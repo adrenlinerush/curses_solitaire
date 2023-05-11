@@ -3,6 +3,7 @@
 ### usage
 
 * q - quite
+* t - turn cards from deck
 * SPACE - select current card
 * TAB - change current stack
 * UP - change current card up in stack
