@@ -77,6 +77,7 @@ def init_screen():
   curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
   curses.init_pair(4, curses.COLOR_BLACK, curses.COLOR_BLACK)
   screen.box()
+  screen.scrollok(True) 
   return screen
 
 
@@ -318,7 +319,6 @@ def check_move(stacks):
 
   if cur_stack == sel_stack and cur_pos == sel_pos:
     logging.debug('Check Complete Stack')
-    logging.debug('Want this card: ' + card_values[(card_values.index(sel_card['value'])+1)])
     logging.debug(sel_card)
 
     try:
