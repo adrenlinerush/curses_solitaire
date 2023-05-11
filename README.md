@@ -1,5 +1,9 @@
 # curses_solitaire
 
+### why
+
+I just wanted to see if I could create a working solitaire game without a implementation reference.  There are many solitair/klondike games out there and even ones that use curses for the shell.  Just a logic exercise.
+
 ### requirements
 
 * UTF-8 encoding/locale
