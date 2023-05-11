@@ -20,6 +20,7 @@
 * UP - change current card up in stack
 * Down - Change current card down in stack
 * ENTER - move selected card to current stack or to completed stack if current = selected
+* F2 - deal/start new game
 
 ### screenshot
 

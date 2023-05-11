@@ -16,6 +16,8 @@ sel_pos = None
 card_values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
 suits = ['♠', '♦', '♥', '♣']
 deck_stack = None
+stacks = None
+screen = None
 
 logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.DEBUG)
 
@@ -299,6 +301,7 @@ def unhighlight(stacks):
     logging.error(card)
 
 def exit_curses():
+  screen.erase()
   curses.nocbreak()
   curses.echo()
   curses.curs_set(True)
@@ -464,6 +467,9 @@ def input(char,stacks,screen):
   if char == 113: # q
     exit_curses()
     sys.exit(0)
+  elif char == 81: #F2
+    exit_curses()
+    init_sol()
   elif char == 116: # t
     render_turn(stacks)
     highlight(stacks)
@@ -520,13 +526,17 @@ def input(char,stacks,screen):
         highlight(stacks)
   check_win(stacks)
 
-  
-deck=init_deck()
-stacks = init_stacks(deck)
-screen = init_screen()
-render_screen(stacks, screen)
+def init_sol():  
+  global stacks
+  global screen
+  deck=init_deck()
+  stacks = init_stacks(deck)
+  screen = init_screen()
+  render_screen(stacks, screen)
+
+init_sol()
 
 while True:
   char = screen.getch()
-  screen.addstr(1,1,str(char))
+  screen.addstr(1,1,str(char)+"  ")
   input(char,stacks,screen)
