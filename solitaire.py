@@ -4,7 +4,7 @@ import sys
 import logging
 
 
-turn=1
+turn=3
 card_width=12
 card_height=10
 deck_status=0
@@ -151,8 +151,10 @@ def deck_invisible(deck):
     try:
       if 'sub_win' in card.keys():
         card['sub_win'].bkgd(' ', curses.color_pair(4))
-        card['sub_win'].erase()
+        erase_card(card['sub_win'])
         card['sub_win'].refresh()
+        card['sub_win'].erase()
+        card['sub_win']=None
       card['visible'] = False
     except Exception as e:
       logging.error('Error making card invisible.')
@@ -177,12 +179,14 @@ def render_turn(stacks):
   x=3+card_width+2
   cards=turn
   if len(deck) < deck_status+turn:
+    logging.debug("Not a full turn end of deck.")
     cards = len(deck)-deck_status
+    logging.debug(cards)
   for i in range(cards):
     card=deck[deck_status+i]
-    if not 'sub_win' in card.keys():
-      card_disp = screen.subwin(card_height,card_width,y,x)
-      card['sub_win'] = card_disp
+    logging.debug(card)
+    card_disp = screen.subwin(card_height,card_width,y,x)
+    card['sub_win'] = card_disp
     card['visible'] = True
     render_card(card)
     x+=4
@@ -361,6 +365,9 @@ def reset():
   global cur_pos
   global sel_stack
   global sel_pos
+  global deck_status
+  if sel_stack == "deck":
+    deck_status-=1
   sel_stack=0
   sel_pos=0
   cur_pos=0
