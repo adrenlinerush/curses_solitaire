@@ -19,7 +19,7 @@ deck_stack = None
 stacks = None
 screen = None
 
-logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.ERROR)
+logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.DEBUG)
 
 def init_deck():
   global card_values
@@ -499,6 +499,55 @@ def check_win(stacks):
     exit_curses()
     sys.exit(0)
 
+def move(stacks,screen,fwd=True):
+  global cur_stack
+  global cur_pos
+  global sel_stack
+  global sel_pos
+  unhighlight(stacks)
+  goto_next=True
+  empty=False
+  if fwd:
+    logging.debug("Forward move")
+  else:
+    logging.debug("Reverse move")
+  while goto_next:
+    if cur_stack == "deck":
+      if fwd:
+        cur_stack = "1"
+      else:
+        cur_stack = "7"
+      cur_pos = len(stacks[cur_stack])-1
+    elif cur_stack == "7":
+      if fwd:
+        cur_stack = "deck"
+        cur_pos = 0
+      else:
+        cur_stack = "6"
+        cur_pos = len(stacks[cur_stack])-1
+    else:
+      if fwd:
+        cur_stack = str(int(cur_stack) + 1)
+        cur_pos = len(stacks[cur_stack])-1
+      else: 
+        if cur_stack == "1":
+          cur_stack = "deck"
+          cur_pos = 0
+        else:
+          cur_stack = str(int(cur_stack) - 1)
+          cur_pos = len(stacks[cur_stack])-1
+    is_deck = is_deck_vis(stacks["deck"])
+    if len(stacks[cur_stack]) > 0 and cur_stack != "deck" or is_deck:
+      goto_next=False
+    if len(stacks[cur_stack]) == 0 and cur_stack != "deck" and sel_stack:
+      goto_next=False
+      empty=True
+  logging.debug(cur_stack)
+  show_empty_stacks(stacks)
+  if not empty:
+    highlight(stacks)
+  render_screen(stacks, screen)
+
 def input(char,stacks,screen):
   global cur_stack
   global cur_pos
@@ -514,34 +563,9 @@ def input(char,stacks,screen):
     render_turn(stacks)
     highlight(stacks)
   elif char == 9: # TAB
-    unhighlight(stacks)
-    goto_next=True
-    empty=False
-    while goto_next:
-      if cur_stack == "deck":
-        cur_stack = "1"
-        cur_pos = len(stacks[cur_stack])-1
-      elif cur_stack == "7":
-        cur_stack = "deck"
-        cur_pos = 0
-      else:
-        cur_stack = str(int(cur_stack) + 1)
-        cur_pos = len(stacks[cur_stack])-1
-      v = 0
-      if cur_stack == "deck":
-        for card in stacks["deck"]:
-          if card['visible']:
-            v+=1
-      if len(stacks[cur_stack]) > 0 and cur_stack != "deck" or v > 0:
-        goto_next=False
-      if len(stacks[cur_stack]) == 0 and cur_stack != "deck" and sel_stack:
-        goto_next=False
-        empty=True
-    logging.debug(cur_stack)
-    show_empty_stacks(stacks)
-    if not empty:
-      highlight(stacks)
-    render_screen(stacks, screen)
+    move(stacks,screen)
+  elif char == 90: # SHIFT TAB
+    move(stacks,screen,fwd=False)
   elif char == 32: # SPACE
     if not sel_stack:
       select(stacks)
