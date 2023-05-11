@@ -105,12 +105,12 @@ def render_card(card):
     card_disp.bkgd(' ', curses.color_pair(card['color']))
     logging.debug(highlight)
     if card['select'] and card['highlight']:
-      card_disp.bkgd(' ', curses.color_pair(card['color']) | curses.A_REVERSE | curses.A_BLINK)
+      card_disp.bkgd(' ', curses.color_pair(card['color']) | curses.A_REVERSE | curses.A_BLINK | curses.A_UNDERLINE)
     elif card['select']:
       card_disp.bkgd(' ', curses.color_pair(card['color']) | curses.A_REVERSE)
     elif card['highlight']:
       logging.debug('blink')
-      card_disp.bkgd(' ', curses.color_pair(card['color']) | curses.A_BLINK)
+      card_disp.bkgd(' ', curses.color_pair(card['color']) | curses.A_BLINK | curses.A_UNDERLINE)
 
     card_disp.addstr(1,1, card['value'] + " " + card['suit'])
     card_disp.addstr(4,6, card['suit'])
@@ -134,7 +134,7 @@ def draw_comp_stacks(stacks, screen):
     else:
       card_disp = screen.subwin(card_height,card_width,y,x)
       visible_card = stacks[suit][-1]
-      erase_card(visible_card['sub_win'])
+      #erase_card(visible_card['sub_win'])
       #del visible_card['sub_win']
       visible_card['sub_win'] = card_disp
       visible_card['sub_win'].mvwin(y,x)
@@ -145,11 +145,16 @@ def draw_comp_stacks(stacks, screen):
 
 def deck_invisible(deck):
   for card in deck:
-    if 'sub_win' in card.keys():
-      card['sub_win'].bkgd(' ', curses.color_pair(4))
-      card['sub_win'].erase()
-      card['sub_win'].refresh()
-    card['visible'] = False
+    try:
+      if 'sub_win' in card.keys():
+        card['sub_win'].bkgd(' ', curses.color_pair(4))
+        card['sub_win'].erase()
+        card['sub_win'].refresh()
+      card['visible'] = False
+    except Exception as e:
+      logging.error('Error making card invisible.')
+      logging.error(e)
+      logging.error(card)
 
 def erase_card(sub_win):
   y, x = sub_win.getmaxyx()
@@ -219,15 +224,20 @@ def highlight(stacks):
   global cur_stack
   global cur_pos
   card = None
-  if cur_stack == "deck":
-    if deck_status == 0:
-      card = stacks[cur_stack][-1]
+  try:
+    if cur_stack == "deck":
+      if deck_status == 0:
+        card = stacks[cur_stack][-1]
+      else:
+        card = stacks[cur_stack][deck_status-1]
     else:
-      card = stacks[cur_stack][deck_status-1]
-  else:
-    card = stacks[cur_stack][cur_pos]
-  card['highlight'] = True
-  render_card(card)
+      card = stacks[cur_stack][cur_pos]
+    card['highlight'] = True
+    render_card(card)
+  except Exception as e:
+    logging.error('Error highlighting card.')
+    logging.error(e)
+    logging.error(card)
 
 def unselect(stacks):
   global deck_status
@@ -255,16 +265,21 @@ def unhighlight(stacks):
   global cur_stack
   global cur_pos
   card = None
-  if cur_stack == "deck":
-    if deck_status == 0:
-      card = stacks[cur_stack][-1]
+  try:
+    if cur_stack == "deck":
+      if deck_status == 0:
+        card = stacks[cur_stack][-1]
+      else:
+        card = stacks[cur_stack][deck_status-1]
     else:
-      card = stacks[cur_stack][deck_status-1]
-  else:
-    card = stacks[cur_stack][cur_pos]
-  card['highlight'] = False
-  if 'sub_win' in card.keys():
-    render_card(card)  
+      card = stacks[cur_stack][cur_pos]
+    card['highlight'] = False
+    if 'sub_win' in card.keys():
+      render_card(card)  
+  except Exception as e:
+    logging.error('Error unhighlighting card.')
+    logging.error(e)
+    logging.error(card)
 
 def exit_curses():
   curses.nocbreak()
@@ -296,9 +311,9 @@ def check_move(stacks):
     logging.debug(sel_card)
 
     if ((len(stacks[sel_card['suit']]) == 0 and sel_card['value'] == 'A')) or \
-      (sel_card['value'] == card_values[(card_values.index(sel_card['value']))]):
+      (sel_card['value'] == card_values[(card_values.index(stacks[sel_card['suit']][-1]['value'])+1)]):
       logging.debug('Valid Move to Complete')
-      move_to_stack(stacks,stacks[sel_stack][sel_pos]['suit'],deck_pos)
+      move_to_stack(stacks,stacks[sel_stack[sel_pos]['suit']],deck_pos)
       logging.debug(stacks)
       reset()
       return True
@@ -332,10 +347,11 @@ def move_to_stack(stacks,dest_stack,deck_pos=None):
   if not is_stack():
     move_card(sel_stack, sel_pos, dest_stack, deck_pos)
   else:
-    logging.debug("Moving stack..")
+    logging.debug("Moving stack...")
     logging.debug(cur_pos)
-    logging.debug(len(stacks[sel_stack])-1)
-    for card in range(cur_pos,len(stacks[sel_stack])-1):
+    logging.debug(len(stacks[sel_stack]))
+    for card in range(sel_pos,len(stacks[sel_stack])):
+      logging.debug("Moving card...")
       logging.debug(card)
       move_card(sel_stack, card, dest_stack)    
 
@@ -355,19 +371,24 @@ def move_card(src_stack, src_pos, dest_stack, deck_pos = None):
   global sel_stack
   global sel_pos
   card = None
-  if sel_stack == "deck":
-    card = stacks[sel_stack].pop(deck_pos)
-  else:
-    card = stacks[sel_stack].pop(sel_pos)
-    if len(stacks[sel_stack]) > 0:
-      stacks[sel_stack][-1]['visible'] = True
-  logging.debug(card)
-  card['select'] = False
-  card['highlight'] = False
-  if cur_stack is not sel_stack:
-    stacks[cur_stack][-1]['highlight'] = False
-  stacks[dest_stack].append(card)
-  erase_card(card['sub_win'])
+  try:
+    if sel_stack == "deck":
+      card = stacks[sel_stack].pop(deck_pos)
+    else:
+      card = stacks[sel_stack].pop(sel_pos)
+      if len(stacks[sel_stack]) > 0:
+        stacks[sel_stack][-1]['visible'] = True
+    logging.debug(card)
+    card['select'] = False
+    card['highlight'] = False
+    if cur_stack is not sel_stack:
+      stacks[cur_stack][-1]['highlight'] = False
+    stacks[dest_stack].append(card)
+    erase_card(card['sub_win'])
+  except Exception as e:
+    logging.error('Error moving card.')
+    logging.error(e)
+    logging.error(card)
  
 
 def input(char,stacks,screen):
