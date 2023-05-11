@@ -4,6 +4,7 @@ import sys
 import logging
 
 
+#turn=1
 turn=3
 card_width=12
 card_height=10
@@ -444,6 +445,17 @@ def show_empty_stacks(stacks):
       render_card(card)
       card_disp.addstr(5,4, "Empty")
 
+def check_win(stacks):
+  if len(stacks['deck']) == 0:
+    for i in range(7):
+      stack = str(i+1)
+      if len(stacks[stack]) > 0:
+        return
+    # You won the Game
+    logging.debug('You won game over!')
+    exit_curses()
+    sys.exit(0)
+
 def input(char,stacks,screen):
   global cur_stack
   global cur_pos
@@ -506,6 +518,7 @@ def input(char,stacks,screen):
         unhighlight(stacks)
         cur_pos+=1
         highlight(stacks)
+  check_win(stacks)
 
   
 deck=init_deck()
