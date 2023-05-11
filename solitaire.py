@@ -14,6 +14,7 @@ sel_stack = None
 sel_pos = None
 card_values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']
 suits = ['♠', '♦', '♥', '♣']
+deck_stack = None
 
 logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.DEBUG)
 
@@ -80,11 +81,12 @@ def init_screen():
 
 
 def draw_deck(screen):
-  deck = screen.subwin(card_height,card_width,6,3)
-  deck.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
-  deck.addstr(5,4, "Deck")
-  deck.box()
-  deck.refresh()
+  global deck_stack
+  deck_stack = screen.subwin(card_height,card_width,6,3)
+  deck_stack.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
+  deck_stack.addstr(4,4, "Deck")
+  deck_stack.box()
+  deck_stack.refresh()
 
 def draw_inplay(screen,stacks):
   for s in range(7):
@@ -116,7 +118,10 @@ def render_card(card):
     card_disp.addstr(4,6, card['suit'])
     card_disp.addstr(8,7, card['value'] + " " + card['suit'])
   else:
-    card_disp.bkgd(' ', curses.color_pair(1))
+    if card['highlight']:
+      card_disp.bkgd(' ', curses.color_pair(1) | curses.A_BLINK | curses.A_UNDERLINE)
+    else:
+      card_disp.bkgd(' ', curses.color_pair(1))
   card_disp.refresh()
 
 def draw_comp_stacks(stacks, screen):
@@ -134,10 +139,7 @@ def draw_comp_stacks(stacks, screen):
     else:
       card_disp = screen.subwin(card_height,card_width,y,x)
       visible_card = stacks[suit][-1]
-      #erase_card(visible_card['sub_win'])
-      #del visible_card['sub_win']
       visible_card['sub_win'] = card_disp
-      visible_card['sub_win'].mvwin(y,x)
       render_card(visible_card)
       visible_card['sub_win'].refresh()
       screen.refresh()
@@ -165,7 +167,10 @@ def erase_card(sub_win):
 
 def render_turn(stacks):
   global deck_status
+  global deck_stack
   deck=stacks['deck']
+  deck_stack.addstr(5,4, str(len(deck)) + " ")
+  deck_stack.refresh()
   deck_invisible(deck)
   y=6
   x=3+card_width+2
@@ -197,6 +202,7 @@ def render_screen(stacks, screen):
   draw_deck(screen)
   draw_inplay(screen, stacks)
   draw_comp_stacks(stacks, screen)
+  show_empty_stacks(stacks) 
   screen.refresh()
 
 def select(stacks):
@@ -207,17 +213,22 @@ def select(stacks):
   global sel_pos
   if not sel_stack:
     card = None
-    sel_stack = cur_stack
-    sel_pos = cur_pos
-    if cur_stack == "deck":
-      if deck_status == 0:
-        card = stacks[cur_stack][-1]
+    try:
+      sel_stack = cur_stack
+      sel_pos = cur_pos
+      if cur_stack == "deck":
+        if deck_status == 0:
+          card = stacks[cur_stack][-1]
+        else:
+          card = stacks[cur_stack][deck_status-1]
       else:
-        card = stacks[cur_stack][deck_status-1]
-    else:
-      card = stacks[cur_stack][cur_pos]
-    card['select'] = True
-    render_card(card)
+        card = stacks[cur_stack][cur_pos]
+      card['select'] = True
+      render_card(card)
+    except Exception as e:
+      logging.error('Error selecting card.')
+      logging.error(e)
+      logging.error(card)
  
 def highlight(stacks):
   global deck_status
@@ -310,10 +321,23 @@ def check_move(stacks):
     logging.debug('Want this card: ' + card_values[(card_values.index(sel_card['value'])+1)])
     logging.debug(sel_card)
 
-    if ((len(stacks[sel_card['suit']]) == 0 and sel_card['value'] == 'A')) or \
-      (sel_card['value'] == card_values[(card_values.index(stacks[sel_card['suit']][-1]['value'])+1)]):
-      logging.debug('Valid Move to Complete')
-      move_to_stack(stacks,stacks[sel_stack[sel_pos]['suit']],deck_pos)
+    try:
+      if ((len(stacks[sel_card['suit']]) == 0 and sel_card['value'] == 'A')) or \
+        (sel_card['value'] == card_values[(card_values.index(stacks[sel_card['suit']][-1]['value'])+1)]):
+        logging.debug('Valid Move to Complete')
+        move_to_stack(stacks,sel_card['suit'],deck_pos)
+        logging.debug(stacks)
+        reset()
+        return True
+    except Exception as e:
+      logging.error('Error checking if can move card to complete stack.')
+      logging.error(e)
+      logging.error(sel_card)
+  elif len(stacks[cur_stack]) == 0:
+    if sel_card['value'] == 'K':
+      logging.debug('King, can move to empty space.')
+      logging.debug(sel_card)
+      move_to_stack(stacks,cur_stack,deck_pos)
       logging.debug(stacks)
       reset()
       return True
@@ -348,7 +372,7 @@ def move_to_stack(stacks,dest_stack,deck_pos=None):
     move_card(sel_stack, sel_pos, dest_stack, deck_pos)
   else:
     logging.debug("Moving stack...")
-    logging.debug(cur_pos)
+    logging.debug(sel_pos)
     logging.debug(len(stacks[sel_stack]))
     for card in range(sel_pos,len(stacks[sel_stack])):
       logging.debug("Moving card...")
@@ -381,8 +405,12 @@ def move_card(src_stack, src_pos, dest_stack, deck_pos = None):
     logging.debug(card)
     card['select'] = False
     card['highlight'] = False
-    if cur_stack is not sel_stack:
-      stacks[cur_stack][-1]['highlight'] = False
+    try:
+      if cur_stack is not sel_stack:
+        stacks[cur_stack][-1]['highlight'] = False
+    except Exception as e:
+      logging.error('Unable to unhighlight previous card.')
+      logging.error(e)
     stacks[dest_stack].append(card)
     erase_card(card['sub_win'])
   except Exception as e:
@@ -390,6 +418,24 @@ def move_card(src_stack, src_pos, dest_stack, deck_pos = None):
     logging.error(e)
     logging.error(card)
  
+def show_empty_stacks(stacks):
+  global cur_stack
+  for i in range(7):
+    stack = str(i+1)
+    if len(stacks[stack]) == 0:
+      card = {}
+      card['visible'] = False
+      if stack == cur_stack:
+        card['highlight'] = True
+      else:
+        card['highlight'] = False
+      card['select'] = False
+      y = 20
+      x = 3 + (i*14)
+      card_disp = screen.subwin(card_height,card_width,y,x)
+      card['sub_win'] = card_disp
+      render_card(card)
+      card_disp.addstr(5,4, "Empty")
 
 def input(char,stacks,screen):
   global cur_stack
@@ -405,6 +451,7 @@ def input(char,stacks,screen):
   elif char == 9: # TAB
     unhighlight(stacks)
     goto_next=True
+    empty=False
     while goto_next:
       if cur_stack == "deck":
         cur_stack = "1"
@@ -422,8 +469,13 @@ def input(char,stacks,screen):
             v+=1
       if len(stacks[cur_stack]) > 0 and cur_stack != "deck" or v > 0:
         goto_next=False
+      if len(stacks[cur_stack]) == 0 and cur_stack != "deck" and sel_stack:
+        goto_next=False
+        empty=True
     logging.debug(cur_stack)
-    highlight(stacks)
+    show_empty_stacks(stacks)
+    if not empty:
+      highlight(stacks)
     render_screen(stacks, screen)
   elif char == 32: # SPACE
     if not sel_stack:
