@@ -12,7 +12,7 @@
 
 ### usage
 
-* q - quite
+* q - quit
 * t - turn cards from deck
 * SPACE - select current card
 * TAB - change current stack
