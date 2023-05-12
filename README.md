@@ -20,6 +20,7 @@ I just wanted to see if I could create a working solitaire game without a implem
 * t - turn cards from deck
 * SPACE - select current card
 * TAB - change current stack
+* SHIFT+TAB - change current stack in reverse direction
 * UP - change current card up in stack
 * Down - Change current card down in stack
 * ENTER - move selected card to current stack or to completed stack if current = selected

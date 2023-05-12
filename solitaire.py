@@ -86,7 +86,7 @@ def init_screen():
 
 def draw_deck(screen):
   global deck_stack
-  deck_stack = screen.subwin(card_height,card_width,6,3)
+  deck_stack = screen.subwin(card_height,card_width,5,3)
   deck_stack.bkgd(' ', curses.color_pair(1) | curses.A_BOLD)
   deck_stack.addstr(4,4, "Deck")
   deck_stack.box()
@@ -95,13 +95,21 @@ def draw_deck(screen):
 def draw_inplay(screen,stacks):
   for s in range(7):
     stack = stacks[str(s+1)]
-    y = 20
+    y = 16
     x = 3 + (s*14)
+    z = 4
     for card in stack:
-      card_disp = screen.subwin(card_height,card_width,y,x)
+      try:
+        card_disp = screen.subwin(card_height,card_width,y,x)
+        y+=2
+      except Exception as e:
+        logging.error('failed to create subwin, probably out of bounds')
+        logging.error(e)
+        logging.error('try drawing to right of last card')
+        card_disp == screen.subwin(card_height,card_width,y-2,x+z)
+        z+=4
       card['sub_win'] = card_disp
       render_card(card)
-      y+=2
 
 def render_card(card):
   card_disp = card['sub_win']
@@ -132,7 +140,7 @@ def draw_comp_stacks(stacks, screen):
   global suits
   s = 3
   for suit in suits:
-    y = 6
+    y = 5
     x = 3 + (s*(card_width+2))
     if len(stacks[suit]) == 0:
       card_disp = screen.subwin(card_height,card_width,y,x)
@@ -179,9 +187,11 @@ def render_turn(stacks):
   deck_stack.addstr(5,4, str(len(deck)) + " ")
   deck_stack.refresh()
   deck_invisible(deck)
-  y=6
+  y=5
   x=3+card_width+2
   cards=turn
+  if len(deck) == 0:
+    return
   if len(deck) < deck_status+turn:
     logging.debug("Not a full turn end of deck.")
     cards = len(deck)-deck_status
@@ -399,7 +409,7 @@ def reset():
 def draw_under_turn(deck):
   logging.debug('Drawing under card.')
   logging.debug(deck)
-  y=6
+  y=5
   x=3+card_width+2
   if len(deck) > 0 and deck_status > 0:
     logging.debug("Showing under turn.")
@@ -481,7 +491,7 @@ def show_empty_stacks(stacks):
       else:
         card['highlight'] = False
       card['select'] = False
-      y = 20
+      y = 16
       x = 3 + (i*14)
       card_disp = screen.subwin(card_height,card_width,y,x)
       card['sub_win'] = card_disp
