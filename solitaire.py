@@ -214,10 +214,11 @@ def render_turn(stacks):
 def render_screen(stacks, screen):
   title1 = 'Solitaire'
   title2 = 'By: Austin Mount'
-  tx1 = int((curses.COLS-len(title1))/2)
-  tx2 = int((curses.COLS-len(title2))/2)
-  screen.addstr(3, tx1, title1)
-  screen.addstr(4, tx1, title2)
+  width = 3+(7*(card_width+2))
+  tx1 = int((width-len(title1))/2)
+  tx2 = int((width-len(title2))/2)
+  screen.addstr(2, tx1, title1)
+  screen.addstr(3, tx2, title2)
   draw_deck(screen)
   draw_inplay(screen, stacks)
   draw_comp_stacks(stacks, screen)
