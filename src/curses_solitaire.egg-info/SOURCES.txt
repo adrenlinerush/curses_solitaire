@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+src/curses_solitaire/__init__.py
+src/curses_solitaire/solitaire.py
+src/curses_solitaire.egg-info/PKG-INFO
+src/curses_solitaire.egg-info/SOURCES.txt
+src/curses_solitaire.egg-info/dependency_links.txt
+src/curses_solitaire.egg-info/entry_points.txt
+src/curses_solitaire.egg-info/top_level.txt

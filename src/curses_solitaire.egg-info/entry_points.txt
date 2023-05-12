@@ -1,0 +1,2 @@
+[console_scripts]
+solitaire = curses_solitaire.solitaire:run
