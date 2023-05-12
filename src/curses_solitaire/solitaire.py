@@ -19,7 +19,7 @@ deck_stack = None
 stacks = None
 screen = None
 
-logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename="solitaire.log", encoding='utf-8', level=logging.ERROR)
 
 def init_deck():
   global card_values
@@ -609,9 +609,14 @@ def init_sol():
   screen = init_screen()
   render_screen(stacks, screen)
 
-init_sol()
 
-while True:
-  char = screen.getch()
-  screen.addstr(1,1,str(char)+"  ")
-  input(char,stacks,screen)
+def run():
+  init_sol()
+
+  while True:
+    char = screen.getch()
+    screen.addstr(1,1,str(char)+"  ")
+    input(char,stacks,screen)
+
+if __name__ == "__main__":
+  run()
