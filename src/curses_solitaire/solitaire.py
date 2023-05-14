@@ -280,16 +280,21 @@ def unselect(stacks):
     sel_stack = None
     sel_pos = None
     card = None
-    if cur_stack == "deck":
-      if deck_status == 0:
-        card = stacks[cur_stack][-1]
+    try:
+      if cur_stack == "deck":
+        if deck_status == 0:
+          card = stacks[cur_stack][-1]
+        else:
+          card = stacks[cur_stack][deck_status-1]  
       else:
-        card = stacks[cur_stack][deck_status-1]  
-    else:
-      card = stacks[cur_stack][cur_pos]
-    card['select'] = False
-    if 'sub_win' in card.keys():
-      render_card(card)  
+        card = stacks[cur_stack][cur_pos]
+      card['select'] = False
+      if 'sub_win' in card.keys():
+        render_card(card)  
+    except Exception as e:
+      logging.error('Error unselecting card')
+      logging.error(e)
+      logging.error(card)
    
 def unhighlight(stacks):
   global deck_status
@@ -328,6 +333,11 @@ def check_move(stacks):
   global card_values
   sel_card = None
   deck_pos = None
+  if len(stacks[sel_stack]) == 0:
+    logging.debug('Stack is empty!!!!')
+    logging.debug(sel_stack)
+    reset()
+    return False
   if sel_stack == "deck":
     if deck_status == 0:
       deck_pos=len(stacks[sel_stack])-1
@@ -360,6 +370,7 @@ def check_move(stacks):
       logging.error('Error checking if can move card to complete stack.')
       logging.error(e)
       logging.error(sel_card)
+      reset()
   elif len(stacks[cur_stack]) == 0:
     if sel_card['value'] == 'K':
       logging.debug('King, can move to empty space.')
@@ -507,8 +518,7 @@ def check_win(stacks):
         return
     # You won the Game
     logging.debug('You won game over!')
-    exit_curses()
-    sys.exit(0)
+    win()
 
 def move(stacks,screen,fwd=True):
   global cur_stack
@@ -609,6 +619,24 @@ def init_sol():
   screen = init_screen()
   render_screen(stacks, screen)
 
+
+def win():
+  screen = init_screen()
+  title1 = 'Congratualtions, You won!!!'
+  title2 = 'Press F2 to deal again, or anykey to exit.'
+  width = 3+(7*(card_width+2))
+  tx1 = int((width-len(title1))/2)
+  tx2 = int((width-len(title2))/2)
+  screen.addstr(7, tx1, title1)
+  screen.addstr(8, tx2, title2)
+  screen.refresh()
+  char = screen.getch()
+  if char == 81: #F2
+    exit_curses()
+    init_sol()
+  else:
+    exit_curses()
+    sys.exit(0)
 
 def run():
   init_sol()
